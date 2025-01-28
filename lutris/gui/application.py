@@ -393,7 +393,6 @@ class Application(Gtk.Application):
         if update_function:
             update_function(window_inst)
         self.app_windows[window_key] = window_inst
-        logger.debug("Showing window %s", window_key)
         window_inst.show()
         return window_inst
 
@@ -418,7 +417,6 @@ class Application(Gtk.Application):
         window_key = str(app_window.__class__.__name__) + window_key
         try:
             del self.app_windows[window_key]
-            logger.debug("Removed window %s", window_key)
         except KeyError:
             logger.warning("Failed to remove window %s", window_key)
             logger.info("Available windows: %s", ", ".join(self.app_windows.keys()))
@@ -783,7 +781,7 @@ class Application(Gtk.Application):
 
     def on_game_start(self, game: Game) -> None:
         self._running_games.append(game)
-        if settings.read_setting("hide_client_on_game_start") == "True":
+        if self.window and settings.read_bool_setting("hide_client_on_game_start"):
             self.window.hide()  # Hide launcher window
 
     def on_game_stopped(self, game: Game) -> None:
@@ -800,9 +798,9 @@ class Application(Gtk.Application):
         else:
             logger.debug("Game has already been removed from running IDs?")
 
-        if settings.read_bool_setting("hide_client_on_game_start") and not self.quit_on_game_exit:
+        if self.window and settings.read_bool_setting("hide_client_on_game_start") and not self.quit_on_game_exit:
             self.window.show()  # Show launcher window
-        elif not self.window.is_visible():
+        elif not self.window or not self.window.is_visible():
             if not self.has_running_games:
                 if self.quit_on_game_exit or not self.has_tray_icon():
                     self.quit()
